@@ -1,0 +1,16 @@
+[project]
+name = "x2engage"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "azure-functions",
+    "azure-identity",
+    "azure-keyvault-secrets",
+    "azure-data-tables",
+    "tweepy",
+    "requests",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
