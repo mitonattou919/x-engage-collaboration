@@ -1,12 +1,9 @@
 """function_app のオーケストレーションロジックのユニットテスト"""
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-# モジュールレベルの ensure_table_exists() 呼び出しを無害化してからインポート
-with patch("state_manager.ensure_table_exists"):
-    import function_app
-    from function_app import fetch_and_post_tweets
+from function_app import fetch_and_post_tweets
 
 
 def _make_timer(past_due=False):
@@ -26,15 +23,17 @@ def _make_tweet(tweet_id, username="testuser", text="hello"):
     )
 
 
+@patch("function_app.post_to_engage")
 @patch("function_app.get_secret")
-def test_secret_fetch_failure_returns_early(mock_get_secret):
+def test_secret_fetch_failure_returns_early(mock_get_secret, mock_post):
     mock_get_secret.side_effect = Exception("vault error")
-    # 例外を送出しないことを確認（内部でキャッチして return）
     fetch_and_post_tweets(_make_timer())
+    # 例外が外に漏れず、かつ後続処理が呼ばれないことを確認
+    mock_post.assert_not_called()
 
 
 @patch("function_app.fetch_new_tweets", return_value=[])
-@patch("function_app.get_secret", side_effect=["token", "http://hook"])
+@patch("function_app.get_secret", return_value="mock-secret")
 def test_empty_x_accounts_returns_early(mock_secret, mock_fetch, monkeypatch):
     monkeypatch.setenv("X_ACCOUNTS", "")
     fetch_and_post_tweets(_make_timer())
@@ -42,7 +41,7 @@ def test_empty_x_accounts_returns_early(mock_secret, mock_fetch, monkeypatch):
 
 
 @patch("function_app.fetch_new_tweets", return_value=[])
-@patch("function_app.get_secret", side_effect=["token", "http://hook"])
+@patch("function_app.get_secret", return_value="mock-secret")
 def test_no_new_tweets_skips_post(mock_secret, mock_fetch, monkeypatch):
     monkeypatch.setenv("X_ACCOUNTS", "alice")
     with patch("function_app.post_to_engage") as mock_post:
@@ -54,7 +53,7 @@ def test_no_new_tweets_skips_post(mock_secret, mock_fetch, monkeypatch):
 @patch("function_app.get_last_tweet_id", return_value=None)
 @patch("function_app.post_to_engage", return_value=True)
 @patch("function_app.fetch_new_tweets")
-@patch("function_app.get_secret", side_effect=["token", "http://hook"])
+@patch("function_app.get_secret", return_value="mock-secret")
 def test_successful_post_updates_last_tweet_id(
     mock_secret, mock_fetch, mock_post, mock_get_id, mock_set_id, monkeypatch
 ):
@@ -71,7 +70,7 @@ def test_successful_post_updates_last_tweet_id(
 @patch("function_app.get_last_tweet_id", return_value=None)
 @patch("function_app.post_to_engage")
 @patch("function_app.fetch_new_tweets")
-@patch("function_app.get_secret", side_effect=["token", "http://hook"])
+@patch("function_app.get_secret", return_value="mock-secret")
 def test_post_failure_stops_remaining_tweets(
     mock_secret, mock_fetch, mock_post, mock_get_id, mock_set_id, monkeypatch
 ):
@@ -91,7 +90,7 @@ def test_post_failure_stops_remaining_tweets(
 @patch("function_app.get_last_tweet_id", return_value=None)
 @patch("function_app.post_to_engage")
 @patch("function_app.fetch_new_tweets")
-@patch("function_app.get_secret", side_effect=["token", "http://hook"])
+@patch("function_app.get_secret", return_value="mock-secret")
 def test_partial_success_saves_last_successful_id(
     mock_secret, mock_fetch, mock_post, mock_get_id, mock_set_id, monkeypatch
 ):
@@ -106,7 +105,7 @@ def test_partial_success_saves_last_successful_id(
 
 
 @patch("function_app.fetch_new_tweets", return_value=[])
-@patch("function_app.get_secret", side_effect=["token", "http://hook"])
+@patch("function_app.get_secret", return_value="mock-secret")
 def test_past_due_logs_warning(mock_secret, mock_fetch, monkeypatch, caplog):
     import logging
     monkeypatch.setenv("X_ACCOUNTS", "alice")
@@ -119,7 +118,7 @@ def test_past_due_logs_warning(mock_secret, mock_fetch, monkeypatch, caplog):
 @patch("function_app.get_last_tweet_id", return_value=None)
 @patch("function_app.post_to_engage", return_value=True)
 @patch("function_app.fetch_new_tweets")
-@patch("function_app.get_secret", side_effect=["token", "http://hook"])
+@patch("function_app.get_secret", return_value="mock-secret")
 def test_multiple_accounts_processed_independently(
     mock_secret, mock_fetch, mock_post, mock_get_id, mock_set_id, monkeypatch
 ):
