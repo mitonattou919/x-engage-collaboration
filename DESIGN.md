@@ -27,6 +27,13 @@ x2engage/
 ├── engage_client.py       # Logic Apps Webhook クライアント
 ├── state_manager.py       # Table Storage による last_tweet_id 管理
 ├── keyvault_client.py     # Key Vault シークレット取得
+├── tests/
+│   ├── conftest.py        # sys.path 設定
+│   ├── test_x_client.py
+│   ├── test_engage_client.py
+│   ├── test_state_manager.py
+│   ├── test_keyvault_client.py
+│   └── test_function_app.py
 ├── pyproject.toml         # uv プロジェクト定義・依存ライブラリ
 ├── requirements.txt       # デプロイ用（uv export から生成）
 ├── host.json              # Functions ランタイム設定
@@ -202,6 +209,33 @@ uv export --no-hashes -o requirements.txt
 # デプロイ
 func azure functionapp publish <function-app-name>
 ```
+
+---
+
+## テスト
+
+### 実行方法
+
+```bash
+# pytest を dev 依存としてインストール
+uv sync --dev
+
+# テスト実行
+uv run pytest
+```
+
+### テスト構成
+
+外部サービス（X API / Logic Apps / Azure SDK）はすべて `unittest.mock` でモック化しており、
+実際のネットワーク接続・Azure 認証なしでテストを実行できる。
+
+| テストファイル | 対象モジュール | 主なテスト内容 |
+|---|---|---|
+| `test_x_client.py` | `x_client.py` | URL生成、ユーザー解決失敗・キャッシュ、レート制限、ツイート順序 |
+| `test_engage_client.py` | `engage_client.py` | HTTP 200/202 成功、4xx/5xx 失敗、ペイロード構造、@ 重複防止 |
+| `test_state_manager.py` | `state_manager.py` | エンティティ取得・保存・小文字化、ResourceNotFoundError 処理 |
+| `test_keyvault_client.py` | `keyvault_client.py` | 環境変数バイパス、Key Vault 呼び出し、例外の再送出 |
+| `test_function_app.py` | `function_app.py` | シークレット取得失敗、複数アカウント処理、部分失敗・リトライ制御 |
 
 ---
 

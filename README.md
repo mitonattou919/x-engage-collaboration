@@ -32,8 +32,8 @@ Timer Trigger（毎時0分）
 ### ローカル開発
 
 ```bash
-# 依存ライブラリのインストール
-uv sync
+# 依存ライブラリのインストール（dev 依存含む）
+uv sync --dev
 
 # ローカル設定ファイルを作成
 cp local.settings.json.example local.settings.json
@@ -42,6 +42,14 @@ cp local.settings.json.example local.settings.json
 # ローカル起動
 uv run func start
 ```
+
+### テスト実行
+
+```bash
+uv run pytest
+```
+
+外部サービスへの接続は不要（すべてモック化済み）。
 
 ### 手動トリガー（動作確認）
 
