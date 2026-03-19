@@ -37,7 +37,7 @@ def post_to_engage(
     例外は送出しない（呼び出し元で処理を継続できるようにする）。
     """
     payload = {
-        FIELD_MEDIA_TYPE: "twitter",
+        FIELD_MEDIA_TYPE: "x",
         FIELD_ID:         tweet_id,
         FIELD_AUTHOR:     f"@{author_username.lstrip('@')}",
         FIELD_TITLE:      "tweet",
