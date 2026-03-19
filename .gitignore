@@ -6,3 +6,6 @@ __pycache__/
 .env
 
 .python_packages
+.vscode/
+memory/
+uv.lock
